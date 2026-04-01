@@ -612,7 +612,7 @@ const downloadCamshotPhotos = (lead: CamshotLead) => {
                 )}
                {active === "CamShot AI" && (
   <section className="space-y-6">
-    <h2 className="text-xl font-semibold text-amber-100">CamShot AI</h2>
+    <h2 className="text-xl font-semibold text-amber-100">CamShot AI - Updated Build</h2>
     <p className="text-amber-100/80">
       Guest request, photo selection, INR 20/photo billing, UPI QR, WhatsApp delivery.
     </p>
