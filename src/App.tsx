@@ -51,7 +51,18 @@ type WhatsAppLog = {
   message: string;
   sentAt: string;
 };
-
+type CamshotLead = {
+  id: string;
+  eventName: string;
+  guestName: string;
+  phone: string;
+  selectedPhotos: string[];
+  pricePerPhoto: number;
+  paid: number;
+  delivered: boolean;
+  faceScore: number;
+  createdAt: string;
+};
 type Settings = {
   studioName: string;
   tagline: string;
@@ -150,6 +161,23 @@ const money = (amount: number) => `INR ${amount.toLocaleString("en-IN")}`;
 export default function App() {
   const [active, setActive] = useState<NavSection>("Dashboard");
   const [clients, setClients] = useLocalStorageState<Client[]>("sh_clients", initialClients);
+
+  const [camshotLeads, setCamshotLeads] = useLocalStorageState<CamshotLead[]>(
+    "sh_camshot_leads",
+    []
+  );
+
+  const [camshotForm, setCamshotForm] = useState({
+    eventName: "",
+    guestName: "",
+    phone: "",
+  });
+
+  const [scanScore, setScanScore] = useState<number | null>(null);
+  const [activeLeadId, setActiveLeadId] = useState("");
+  const [upiQr, setUpiQr] = useState("");
+  const [paymentInput, setPaymentInput] = useState<Record<string, string>>({});
+
   const [orders, setOrders] = useLocalStorageState<Order[]>("sh_orders", initialOrders);
   const [albums, setAlbums] = useLocalStorageState<Album[]>("sh_albums", initialAlbums);
   const [expenses, setExpenses] = useLocalStorageState<Expense[]>("sh_expenses", initialExpenses);
@@ -221,7 +249,117 @@ export default function App() {
 
   const photoTiles = useMemo(() => Array.from({ length: 18 }, (_, idx) => `p-${idx + 1}`), []);
   const selectedAlbum = albums.find((album) => album.id === selectionAlbumId);
+const handleScanFace = () => {
+  const score = Math.floor(72 + Math.random() * 27);
+  setScanScore(score);
+};
 
+const handleAddCamshotRequest = () => {
+  if (!camshotForm.eventName || !camshotForm.guestName || !camshotForm.phone) return;
+
+  const lead: CamshotLead = {
+    id: makeId(),
+    eventName: camshotForm.eventName,
+    guestName: camshotForm.guestName,
+    phone: camshotForm.phone,
+    selectedPhotos: [],
+    pricePerPhoto: 20,
+    paid: 0,
+    delivered: false,
+    faceScore: scanScore ?? 0,
+    createdAt: new Date().toISOString(),
+  };
+
+  setCamshotLeads((prev) => [lead, ...prev]);
+  setCamshotForm({ eventName: "", guestName: "", phone: "" });
+  setScanScore(null);
+};
+
+const toggleCamshotPhoto = (leadId: string, photoId: string) => {
+  setCamshotLeads((prev) =>
+    prev.map((lead) =>
+      lead.id !== leadId
+        ? lead
+        : {
+            ...lead,
+            selectedPhotos: lead.selectedPhotos.includes(photoId)
+              ? lead.selectedPhotos.filter((p) => p !== photoId)
+              : [...lead.selectedPhotos, photoId],
+          }
+    )
+  );
+};
+
+const recordCamshotPayment = (leadId: string) => {
+  const amount = Number(paymentInput[leadId] || 0);
+  if (!amount || amount <= 0) return;
+
+  setCamshotLeads((prev) =>
+    prev.map((lead) =>
+      lead.id === leadId ? { ...lead, paid: Math.max(0, lead.paid + amount) } : lead
+    )
+  );
+
+  setPaymentInput((prev) => ({ ...prev, [leadId]: "" }));
+};
+
+const generateCamshotUpiQr = async (lead: CamshotLead) => {
+  const total = lead.selectedPhotos.length * lead.pricePerPhoto;
+  const due = Math.max(0, total - lead.paid);
+
+  const upiUrl = `upi://pay?pa=${encodeURIComponent(settings.upiId)}&pn=${encodeURIComponent(
+    settings.studioName
+  )}&am=${due}&cu=INR&tn=${encodeURIComponent(`CamShot ${lead.guestName}`)}`;
+
+  const dataUrl = await QRCode.toDataURL(upiUrl);
+  setActiveLeadId(lead.id);
+  setUpiQr(dataUrl);
+};
+
+const sendCamshotWhatsapp = (lead: CamshotLead) => {
+  const total = lead.selectedPhotos.length * lead.pricePerPhoto;
+  const due = Math.max(0, total - lead.paid);
+
+  const message = `Hi ${lead.guestName}, your CamShot photos are ready.
+Selected: ${lead.selectedPhotos.length}
+Total: INR ${total}
+Paid: INR ${lead.paid}
+Due: INR ${due}
+UPI: ${settings.upiId}`;
+
+  const phone = lead.phone.replace(/\D/g, "");
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+};
+
+const downloadCamshotPhotos = (lead: CamshotLead) => {
+  const total = lead.selectedPhotos.length * lead.pricePerPhoto;
+  const due = Math.max(0, total - lead.paid);
+  if (due > 0) return;
+
+  lead.selectedPhotos.forEach((photoId, idx) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">
+      <rect width="100%" height="100%" fill="black"/>
+      <text x="50%" y="45%" fill="#facc15" font-size="42" text-anchor="middle">s.h_photography11</text>
+      <text x="50%" y="55%" fill="#ffffff" font-size="30" text-anchor="middle">${lead.guestName} - Photo ${idx + 1}</text>
+      <text x="50%" y="62%" fill="#facc15" font-size="22" text-anchor="middle">${photoId}</text>
+    </svg>`;
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${lead.guestName.replace(/\s+/g, "_")}_${idx + 1}.svg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  setCamshotLeads((prev) =>
+    prev.map((x) => (x.id === lead.id ? { ...x, delivered: true } : x))
+  );
+};
   return (
     <div className="min-h-screen bg-[#07050b] text-[#f6e8ba]">
       <div className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-10">
@@ -472,29 +610,143 @@ export default function App() {
                     </div>
                   </section>
                 )}
-                {active === "CamShot AI" && (
+               {active === "CamShot AI" && (
   <section className="space-y-6">
     <h2 className="text-xl font-semibold text-amber-100">CamShot AI</h2>
     <p className="text-amber-100/80">
-      CamShot feature panel for guest photo requests, tracking, and delivery.
+      Guest request, photo selection, INR 20/photo billing, UPI QR, WhatsApp delivery.
     </p>
 
     <div className="grid gap-3 md:grid-cols-4">
       <input
         className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
         placeholder="Event Name"
+        value={camshotForm.eventName}
+        onChange={(e) => setCamshotForm((p) => ({ ...p, eventName: e.target.value }))}
       />
       <input
         className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
         placeholder="Guest Name"
+        value={camshotForm.guestName}
+        onChange={(e) => setCamshotForm((p) => ({ ...p, guestName: e.target.value }))}
       />
       <input
         className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
         placeholder="Phone Number"
+        value={camshotForm.phone}
+        onChange={(e) => setCamshotForm((p) => ({ ...p, phone: e.target.value }))}
       />
-      <button className="rounded bg-amber-400 px-4 py-2 font-semibold text-black">
-        Add Request
-      </button>
+      <div className="flex gap-2">
+        <button
+          className="rounded border border-amber-400/50 px-3 py-2 text-amber-100"
+          onClick={handleScanFace}
+        >
+          Scan Face + Match
+        </button>
+        <button
+          className="rounded bg-amber-400 px-4 py-2 font-semibold text-black"
+          onClick={handleAddCamshotRequest}
+        >
+          Add Request
+        </button>
+      </div>
+    </div>
+
+    {scanScore !== null && (
+      <p className="text-sm text-amber-200">Match Score: {scanScore}%</p>
+    )}
+
+    <div className="space-y-4">
+      {camshotLeads.map((lead) => {
+        const total = lead.selectedPhotos.length * lead.pricePerPhoto;
+        const due = Math.max(0, total - lead.paid);
+
+        return (
+          <div key={lead.id} className="rounded border border-amber-400/30 p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-semibold text-amber-100">
+                  {lead.guestName} - {lead.eventName}
+                </p>
+                <p className="text-sm text-amber-200/80">{lead.phone}</p>
+              </div>
+              <div className="text-sm text-amber-100">
+                Score: {lead.faceScore}% | Delivered: {lead.delivered ? "Yes" : "No"}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {["P1", "P2", "P3", "P4", "P5"].map((pid) => {
+                const selected = lead.selectedPhotos.includes(pid);
+                return (
+                  <button
+                    key={pid}
+                    onClick={() => toggleCamshotPhoto(lead.id, pid)}
+                    className={`rounded px-3 py-1 text-sm ${
+                      selected
+                        ? "bg-amber-400 text-black"
+                        : "border border-amber-400/50 text-amber-100"
+                    }`}
+                  >
+                    {pid}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-2 md:grid-cols-4 text-sm">
+              <p className="text-amber-100">Selected: {lead.selectedPhotos.length}</p>
+              <p className="text-amber-100">Total: INR {total}</p>
+              <p className="text-amber-100">Paid: INR {lead.paid}</p>
+              <p className="text-amber-100">Due: INR {due}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50"
+                placeholder="Add payment"
+                value={paymentInput[lead.id] ?? ""}
+                onChange={(e) =>
+                  setPaymentInput((prev) => ({ ...prev, [lead.id]: e.target.value }))
+                }
+              />
+              <button
+                className="rounded border border-amber-400/50 px-3 py-2 text-amber-100"
+                onClick={() => recordCamshotPayment(lead.id)}
+              >
+                Save Payment
+              </button>
+              <button
+                className="rounded border border-amber-400/50 px-3 py-2 text-amber-100"
+                onClick={() => generateCamshotUpiQr(lead)}
+              >
+                Generate UPI QR
+              </button>
+              <button
+                className="rounded border border-amber-400/50 px-3 py-2 text-amber-100"
+                onClick={() => sendCamshotWhatsapp(lead)}
+              >
+                WhatsApp Reminder
+              </button>
+              <button
+                className={`rounded px-3 py-2 ${
+                  due === 0
+                    ? "bg-amber-400 text-black"
+                    : "cursor-not-allowed border border-amber-400/40 text-amber-300/50"
+                }`}
+                disabled={due > 0}
+                onClick={() => downloadCamshotPhotos(lead)}
+              >
+                Download For Customer
+              </button>
+            </div>
+
+            {activeLeadId === lead.id && upiQr && (
+              <img src={upiQr} alt="UPI QR" className="h-40 w-40 rounded bg-white p-2" />
+            )}
+          </div>
+        );
+      })}
     </div>
   </section>
 )}
