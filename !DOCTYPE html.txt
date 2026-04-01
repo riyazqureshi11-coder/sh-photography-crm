@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>S.H Photography | Wedding Films & Events</title>
+  <meta name="description" content="Luxury wedding photography & films. Turning moments into timeless memories. Available Pan India." />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Poppins, sans-serif;background:#0b0b0b;color:#fff;line-height:1.6}
+    a{text-decoration:none;color:inherit}
+    .container{max-width:1200px;margin:auto;padding:0 20px}
+    header{height:100vh;background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),url('hero.jpg') center/cover no-repeat;display:flex;align-items:center}
+    .hero h1{font-family:'Playfair Display',serif;font-size:52px;color:#d4af37}
+    .hero p{max-width:520px;margin:20px 0}
+    .btn{display:inline-block;margin-top:20px;padding:12px 28px;border:1px solid #d4af37;color:#d4af37;border-radius:30px}
+    .btn:hover{background:#d4af37;color:#000}
+    section{padding:80px 0}
+    h2{font-family:'Playfair Display',serif;color:#d4af37;font-size:36px;margin-bottom:20px;text-align:center}
+    .about,.services,.contact{text-align:center}
+    .services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:40px}
+    .card{background:#111;padding:30px;border-radius:16px}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+    .gallery div{height:220px;background:#222;border-radius:14px}
+    footer{background:#000;text-align:center;padding:30px;font-size:14px;color:#aaa}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container hero">
+    <h1>S.H Photography</h1>
+    <p>Turning moments into timeless memories. Luxury wedding films, candid photography & events coverage.</p>
+    <a href="#contact" class="btn">Book Your Date</a>
+  </div>
+</header>
+
+<section class="about container">
+  <h2>About Us</h2>
+  <p>We are a premium wedding photography & filmmaking brand based in Maharashtra, available Pan India. Our style blends emotions, elegance and cinematic storytelling.</p>
+</section>
+
+<section class="services container">
+  <h2>Our Services</h2>
+  <div class="services-grid">
+    <div class="card">Wedding Photography</div>
+    <div class="card">Candid Photography</div>
+    <div class="card">Wedding Films</div>
+    <div class="card">Pre-Wedding Shoots</div>
+    <div class="card">Luxury Events</div>
+  </div>
+</section>
+
+<section class="container">
+  <h2>Gallery</h2>
+  <div class="gallery">
+    <div></div><div></div><div></div><div></div><div></div><div></div>
+  </div>
+</section>
+
+<section class="contact container" id="contact">
+  <h2>Contact Us</h2>
+  <p>📍 Maharashtra | Available Pan India</p>
+  <p>📞 +91 9867865379</p>
+  <p>📸 Instagram: @s.h_photography11</p>
+</section>
+
+<footer>
+  © 2026 S.H Photography. All Rights Reserved.
+</footer>
+
+</body>
+</html>
