@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import jsPDF from "jspdf";
 import QRCode from "qrcode";
 
-type NavSection = "Dashboard" | "Clients" | "Orders" | "Billing" | "Albums" | "Photo Selection" | "Calendar" | "WhatsApp" | "Settings";
+type NavSection = "Dashboard" | "Clients" | "Orders" | "Billing" | "Albums" | "Photo Selection" | "Calendar" | "WhatsApp" | "CamShot AI" | "Settings";
 type OrderStatus = "Pending" | "Confirmed" | "Completed";
 
 type Client = {
@@ -124,7 +124,7 @@ const initialSettings: Settings = {
   address: "Jaipur, Rajasthan",
 };
 
-const tabs: NavSection[] = ["Dashboard", "Clients", "Orders", "Billing", "Albums", "Photo Selection", "Calendar", "WhatsApp", "Settings"];
+const tabs: NavSection[] = ["Dashboard", "Clients", "Orders", "Billing", "Albums", "Photo Selection", "Calendar", "WhatsApp", "CamShot AI", "Settings"];
 
 const makeId = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
 
@@ -472,6 +472,32 @@ export default function App() {
                     </div>
                   </section>
                 )}
+                {active === "CamShot AI" && (
+  <section className="space-y-6">
+    <h2 className="text-xl font-semibold text-amber-100">CamShot AI</h2>
+    <p className="text-amber-100/80">
+      CamShot feature panel for guest photo requests, tracking, and delivery.
+    </p>
+
+    <div className="grid gap-3 md:grid-cols-4">
+      <input
+        className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
+        placeholder="Event Name"
+      />
+      <input
+        className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
+        placeholder="Guest Name"
+      />
+      <input
+        className="rounded border border-amber-400/40 bg-black/30 px-3 py-2 text-amber-50 placeholder:text-amber-200/40"
+        placeholder="Phone Number"
+      />
+      <button className="rounded bg-amber-400 px-4 py-2 font-semibold text-black">
+        Add Request
+      </button>
+    </div>
+  </section>
+)}
 
                 {active === "Settings" && (
                   <section className="space-y-5">
